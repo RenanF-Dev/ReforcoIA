@@ -27,6 +27,10 @@ IAs genéricas entregam o código pronto e eliminam a reflexão crítica do estu
 | 2 | Pergunta + dica conceitual |
 | 3 | Pergunta + dica + aprofundamento teórico |
 
+5. **Parabéns:** quando o aluno reenvia o código depois de uma análise, a IA compara com a versão anterior. Se concluir que o problema foi corrigido, a tela mostra uma mensagem de parabéns e o bug é marcado como resolvido. Essa avaliação é da IA e pode errar, por isso a tela lembra o aluno de testar o código.
+
+O veredito é decidido pela IA **antes** de escrever as perguntas (o JSON traz `motivo_veredito` primeiro) e é registrado no terminal do servidor, o que facilita a depuração.
+
 A IA gera as três camadas de uma vez e o servidor as guarda na sessão. Subir de nível não faz nova chamada à IA, e o conteúdo dos níveis ainda não liberados nunca sai do servidor.
 
 ## Estrutura do repositório
@@ -120,6 +124,8 @@ POST /api/sessoes
 }
 ```
 
+Para reenviar o código corrigido, inclua `"id_sessao_anterior"` com o `id_sessao` da análise anterior (a interface faz isso sozinha). Sem esse campo não há comparação e `codigo_correto` é sempre `false`.
+
 O campo `linguagem` vale `"auto"` por padrão: a IA identifica a linguagem pelo código. O `erro_terminal` é opcional, e sem ele a IA analisa o código por conta própria.
 
 Exemplo de resposta (nível 1):
@@ -131,7 +137,9 @@ Exemplo de resposta (nível 1):
   "resposta_ia": {
     "pergunta_socratica": "Você sabe qual é o último índice válido de uma lista com 3 elementos e até que número o seu `range` está tentando chegar?",
     "dica_conceitual": "",
-    "aprofundamento": ""
+    "aprofundamento": "",
+    "codigo_correto": false,
+    "parabens": ""
   },
   "bug_resolvido": false
 }
@@ -164,7 +172,8 @@ class SessaoTutor:
     erro_terminal: str
     linguagem: str          # "auto" = a IA identifica
     nivel_ajuda: int        # 1:Pergunta, 2:Dica, 3:Conceito
-    resposta_ia: RespostaIA # pergunta_socratica, dica_conceitual, aprofundamento
+    resposta_ia: RespostaIA # pergunta_socratica, dica_conceitual, aprofundamento,
+                            # codigo_correto, parabens
     bug_resolvido: bool
 ```
 
@@ -181,11 +190,13 @@ As sessões ficam em memória e são perdidas ao reiniciar o servidor.
 | `POST /api/sessoes/{id}/aumentar-nivel` (2 para 3) | `aprofundamento` liberado, sem nova chamada à IA |
 | `PUT /api/sessoes/{id}/nivel` (1, 2 e 3) | Conteúdo escondido e liberado de acordo com o nível; os textos se mantêm entre as trocas |
 | Conteúdo das respostas | Nenhuma camada trouxe o código corrigido |
-| Interface em navegador automatizado, com a API real e respostas da IA simuladas | Análise, níveis, "resolvido", limpar, atalho `Ctrl + Enter`, avisos de erro (502 e 422) e escape de HTML da resposta: 27 verificações OK |
+| Interface em navegador automatizado, com a API real e respostas da IA simuladas | Análise, níveis, "resolvido", limpar, atalho `Ctrl + Enter`, avisos de erro (502 e 422) e escape de HTML da resposta: verificações OK |
+| Interface com o fluxo de correção (IA simulada) | Primeira análise sem sessão anterior, reenvio ainda errado sem parabéns, reenvio correto com parabéns e bug resolvido, referência mantida após falha da IA, reinício após Limpar: 38 verificações OK no total |
+| Reenvio do código corrigido com a IA real (`IndexError` em `range(len(n) + 1)`) | Primeira análise sem veredito; no reenvio a IA concluiu `codigo_correto=true`, a tela mostrou só os parabéns e marcou "Bug Resolvido" |
 | Falha do modelo principal (504) | O backend passou ao modelo reserva e respondeu |
 | `git status` | `.env` fora da lista de arquivos a versionar |
 
-Ainda não testados: a interface com a IA real do Gemini no navegador, `aumentar-nivel` com a sessão já no nível 3, os erros 404 (sessão inexistente) e 422 (código vazio) direto na API, além de outras linguagens.
+Ainda não testados: o veredito com outros tipos de bug e com reenvios que continuam errados (falsos positivos), `aumentar-nivel` com a sessão já no nível 3, os erros 404 (sessão inexistente) e 422 (código vazio) direto na API, além de outras linguagens.
 
 ## Planejamento
 

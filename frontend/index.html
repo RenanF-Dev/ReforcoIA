@@ -131,6 +131,16 @@
             <p class="text-xs leading-relaxed max-w-xs">Cole o seu código e, se tiver, a mensagem de erro do terminal. Depois clique em <span class="text-slate-300">Analisar Código</span>: o tutor guia com perguntas, sem entregar a resposta.</p>
           </div>
 
+          <!-- Parabéns: aparece quando a IA conclui que o código reenviado corrige o problema -->
+          <div id="cardCongrats" class="hidden bg-emerald-500/10 border border-emerald-500/40 rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="p-1 rounded bg-emerald-500/20 text-emerald-300"><i data-lucide="party-popper" class="w-4 h-4"></i></span>
+              <h3 class="text-xs font-bold text-emerald-300 uppercase tracking-wider">Parabéns, você resolveu o bug!</h3>
+            </div>
+            <p id="congratsText" class="text-sm text-slate-200 leading-relaxed"></p>
+            <p class="text-[11px] text-slate-500 mt-2">Avaliação feita pela IA, que pode errar. Teste o código para confirmar.</p>
+          </div>
+
           <!-- Pergunta Guiada (nível 1) -->
           <div id="cardQuestion" class="hidden bg-slate-800/80 border-l-4 border-indigo-500 rounded-r-xl p-4">
             <div class="flex items-center gap-2 mb-2">

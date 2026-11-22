@@ -11,7 +11,8 @@ const API_URL = "http://localhost:8000";
 // ---------------------------------------------------------------------------
 // Estado e elementos da tela
 // ---------------------------------------------------------------------------
-const state = { sessionId: null, level: 1, resolved: false, busy: false };
+// previousId: última análise bem-sucedida. É enviada ao reanalisar, para a IA comparar as versões do código.
+const state = { sessionId: null, previousId: null, level: 1, resolved: false, celebrating: false, busy: false };
 
 const $ = (id) => document.getElementById(id);
 const el = {
@@ -22,9 +23,12 @@ const el = {
   spinner: $("spinner"),
   analyzeLabel: $("analyzeLabel"),
   clearCodeBtn: $("clearCodeBtn"),
+  feedback: $("feedbackContent"),
   emptyState: $("emptyState"),
   errorBox: $("errorBox"),
   errorText: $("errorText"),
+  cardCongrats: $("cardCongrats"),
+  congratsText: $("congratsText"),
   cardQuestion: $("cardQuestion"),
   cardHint: $("cardHint"),
   cardConcept: $("cardConcept"),
@@ -104,6 +108,7 @@ async function api(path, options = {}) {
 function showError(message) {
   el.errorText.textContent = message;
   el.errorBox.classList.remove("hidden");
+  el.feedback.scrollTop = 0; // o aviso fica no topo: garante que o aluno o veja
 }
 
 function hideError() {
@@ -118,21 +123,29 @@ function setCard(card, textEl, text, color) {
 
 function renderSession(s) {
   state.sessionId = s.id_sessao;
+  state.previousId = s.id_sessao;
   state.level = s.nivel_ajuda;
   state.resolved = s.bug_resolvido;
 
   el.emptyState.classList.add("hidden");
-  setCard(el.cardQuestion, el.questionText, s.resposta_ia.pergunta_socratica, "indigo");
-  setCard(el.cardHint, el.hintText, s.resposta_ia.dica_conceitual, "emerald");
-  setCard(el.cardConcept, el.conceptText, s.resposta_ia.aprofundamento, "amber");
+  // Bug resolvido pela IA: mostra só os parabéns (não há mais o que perguntar)
+  const parabens = s.resposta_ia.codigo_correto ? s.resposta_ia.parabens : "";
+  state.celebrating = Boolean(parabens);
+  el.cardCongrats.classList.toggle("hidden", !parabens);
+  el.congratsText.textContent = parabens;
+  setCard(el.cardQuestion, el.questionText, parabens ? "" : s.resposta_ia.pergunta_socratica, "indigo");
+  setCard(el.cardHint, el.hintText, parabens ? "" : s.resposta_ia.dica_conceitual, "emerald");
+  setCard(el.cardConcept, el.conceptText, parabens ? "" : s.resposta_ia.aprofundamento, "amber");
   updateControls();
+  el.feedback.scrollTop = 0;
 }
 
 function resetPanel() {
   state.sessionId = null;
   state.level = 1;
   state.resolved = false;
-  [el.cardQuestion, el.cardHint, el.cardConcept].forEach((c) => c.classList.add("hidden"));
+  state.celebrating = false;
+  [el.cardCongrats, el.cardQuestion, el.cardHint, el.cardConcept].forEach((c) => c.classList.add("hidden"));
   el.emptyState.classList.remove("hidden");
   hideError();
   updateControls();
@@ -140,7 +153,7 @@ function resetPanel() {
 
 function updateControls() {
   const hasSession = state.sessionId !== null;
-  const locked = !hasSession || state.busy;
+  const locked = !hasSession || state.busy || state.celebrating; // com os parabéns não há mais ajuda a liberar
 
   el.lvlBtns.forEach((btn, i) => {
     btn.className = hasSession && state.level === i + 1 ? BTN_ACTIVE : BTN_INACTIVE;
@@ -181,6 +194,8 @@ async function run(action, analyzing = false) {
   try {
     renderSession(await action());
   } catch (err) {
+    // Uma análise nova que falha não deve deixar a resposta do código anterior na tela
+    if (analyzing) resetPanel();
     showError(err.message);
     if (err.network) checkHealth();
   } finally {
@@ -205,6 +220,7 @@ function analyze() {
           erro_terminal: el.terminalInput.value,
           linguagem: "auto",
           nivel_ajuda: 1, // o método socrático começa só com a pergunta
+          id_sessao_anterior: state.previousId, // null na primeira análise
         }),
       }),
     true
@@ -234,6 +250,7 @@ function markResolved() {
 function clearAll() {
   el.codeEditor.value = "";
   el.terminalInput.value = "";
+  state.previousId = null; // recomeço: a próxima análise não é comparada com nada
   resetPanel();
   el.codeEditor.focus();
 }
