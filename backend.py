@@ -1,20 +1,3 @@
-"""
-ReforçoIA - Backend
-Tutor de programação baseado no método socrático.
-
-Fluxo (conforme PDF):
-  1. Recepção de Dados   -> POST /api/sessoes
-  2. Prompt Restritivo   -> SYSTEM_PROMPT + sanitizar_resposta()
-  3. Filtro de Nível     -> filtrar_por_nivel()
-  4. Renderização        -> o front consome o JSON já filtrado
-
-Rodar:
-  pip install fastapi uvicorn google-genai pydantic
-  export GEMINI_API_KEY="sua-chave"        # nunca escreva a chave dentro do código
-  uvicorn backend:app --reload --port 8000
-Docs interativas: http://localhost:8000/docs
-"""
-
 import json
 import os
 import re
@@ -33,9 +16,8 @@ try:  # carrega variáveis do arquivo .env (se existir)
 except ImportError:
     pass
 
-# --------------------------------------------------------------------------
+
 # Configuração
-# --------------------------------------------------------------------------
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 GEMINI_MODEL_RESERVA = os.getenv("GEMINI_MODEL_RESERVA", "")  # usado se o principal falhar
@@ -44,9 +26,8 @@ MAX_CODIGO = 20_000   # caracteres; limita custo e abuso
 MAX_ERRO = 5_000
 TENTATIVAS_LLM = 2    # reenvia uma vez se a IA devolver JSON inválido
 
-# --------------------------------------------------------------------------
+
 # Modelos de dados (SessaoTutor)
-# --------------------------------------------------------------------------
 class RespostaIA(BaseModel):
     pergunta_socratica: str = ""
     dica_conceitual: str = ""
@@ -82,9 +63,7 @@ class NivelRequest(BaseModel):
     nivel_ajuda: int = Field(..., ge=NIVEL_MIN, le=NIVEL_MAX)
 
 
-# --------------------------------------------------------------------------
 # Passo 2 - Prompt Restritivo
-# --------------------------------------------------------------------------
 SYSTEM_PROMPT = """Você é o ReforçoIA, um tutor de programação que usa o MÉTODO SOCRÁTICO.
 O aluno enviou um código (e, às vezes, a mensagem de erro do terminal). Ajude-o a descobrir o problema sozinho.
 
@@ -127,9 +106,8 @@ def sanitizar_resposta(resposta: RespostaIA) -> RespostaIA:
     return RespostaIA(**dados)
 
 
-# --------------------------------------------------------------------------
+
 # Geração da resposta (LLM)
-# --------------------------------------------------------------------------
 def _extrair_json(texto: str) -> dict:
     texto = texto.strip()
     inicio, fim = texto.find("{"), texto.rfind("}")
@@ -198,9 +176,7 @@ def gerar_resposta(sessao: SessaoTutor) -> RespostaIA:
     raise HTTPException(502, "Não foi possível consultar a IA agora. Tente novamente.")
 
 
-# --------------------------------------------------------------------------
 # Passo 3 - Filtro de Nível
-# --------------------------------------------------------------------------
 def filtrar_por_nivel(resposta: RespostaIA, nivel: int) -> RespostaIA:
     """Nível 1: só pergunta | Nível 2: pergunta + dica | Nível 3: tudo."""
     return RespostaIA(
@@ -219,9 +195,7 @@ def _view(sessao: SessaoTutor) -> SessaoView:
     )
 
 
-# --------------------------------------------------------------------------
 # API
-# --------------------------------------------------------------------------
 app = FastAPI(title="ReforçoIA API", version="0.3.0")
 app.add_middleware(
     CORSMiddleware,
