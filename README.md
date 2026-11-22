@@ -162,11 +162,16 @@ As sessões ficam em memória e são perdidas ao reiniciar o servidor.
 | Teste | Resultado |
 |---|---|
 | `GET /api/saude` com a chave configurada | `ia_configurada: true` |
-| `POST /api/sessoes` com `IndexError` em Python (nível 1) | 200, com pergunta socrática sem entregar a solução |
+| `POST /api/sessoes`: `IndexError` em Python (nível 1) | 200, pergunta socrática sem entregar a solução |
+| `POST /api/sessoes`: `TypeError` com `input()` em Python (nível 1) | 200, a IA se adaptou ao novo erro |
+| `POST /api/sessoes`: `TypeError` em JavaScript (níveis 2 e 3) | 200, camadas liberadas conforme o nível pedido |
+| `POST /api/sessoes/{id}/aumentar-nivel` (2 para 3) | `aprofundamento` liberado, sem nova chamada à IA |
+| `PUT /api/sessoes/{id}/nivel` (1, 2 e 3) | Conteúdo escondido e liberado de acordo com o nível; os textos se mantêm entre as trocas |
+| Conteúdo das respostas | Nenhuma camada trouxe o código corrigido |
 | Falha do modelo principal (504) | O backend passou ao modelo reserva e respondeu |
 | `git status` | `.env` fora da lista de arquivos a versionar |
 
-Ainda não testados: os níveis 2 e 3, outras linguagens e outros tipos de erro, além da validação de que a IA nunca entrega o código corrigido nesses níveis.
+Ainda não testados: `aumentar-nivel` com a sessão já no nível 3, os erros 404 (sessão inexistente) e 422 (código vazio), além de outras linguagens.
 
 ## Planejamento
 
