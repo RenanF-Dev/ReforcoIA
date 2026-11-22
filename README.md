@@ -34,6 +34,10 @@ A IA gera as três camadas de uma vez e o servidor as guarda na sessão. Subir d
 ```
 ReforcoIA/
 ├── backend.py          # API (FastAPI) + integração com o Gemini
+├── frontend/           # interface web (consome a API)
+│   ├── index.html      # estrutura da tela
+│   ├── app.js          # lógica: chamadas à API e renderização
+│   └── styles.css      # estilos complementares
 ├── requirements.txt    # dependências Python
 ├── .env.example        # modelo de configuração (sem segredos)
 ├── .gitignore          # impede o envio do .env
@@ -67,6 +71,15 @@ python -m uvicorn backend:app --port 8000
 - Verificação: <http://localhost:8000/api/saude> deve mostrar `"ia_configurada": true`.
 - Documentação interativa (Swagger): <http://localhost:8000/docs>
 - Depois de editar o `.env`, reinicie o servidor (`Ctrl+C` e suba de novo).
+
+### Abrindo a interface
+
+Com o servidor rodando, abra o arquivo `frontend/index.html` no navegador (duplo clique). Não há nada para instalar: a tela usa Tailwind, as fontes e os ícones via CDN, então é preciso estar online.
+
+- O canto superior direito mostra o estado da conexão: **API online** (com o modelo em uso), **IA sem chave** ou **API offline**.
+- Se o servidor estiver em outra porta que não a 8000, ajuste a constante `API_URL` no início de `frontend/app.js`.
+
+Uso: cole o código e, se tiver, a mensagem do terminal; clique em **Analisar Código** (ou `Ctrl + Enter`). A análise começa no nível 1. Use os botões 1, 2 e 3 ou **Aumentar Nível de Ajuda** para liberar dica e aprofundamento, e **Já resolvi o bug** para encerrar a sessão.
 
 ## Configuração (.env)
 
@@ -168,10 +181,11 @@ As sessões ficam em memória e são perdidas ao reiniciar o servidor.
 | `POST /api/sessoes/{id}/aumentar-nivel` (2 para 3) | `aprofundamento` liberado, sem nova chamada à IA |
 | `PUT /api/sessoes/{id}/nivel` (1, 2 e 3) | Conteúdo escondido e liberado de acordo com o nível; os textos se mantêm entre as trocas |
 | Conteúdo das respostas | Nenhuma camada trouxe o código corrigido |
+| Interface em navegador automatizado, com a API real e respostas da IA simuladas | Análise, níveis, "resolvido", limpar, atalho `Ctrl + Enter`, avisos de erro (502 e 422) e escape de HTML da resposta: 27 verificações OK |
 | Falha do modelo principal (504) | O backend passou ao modelo reserva e respondeu |
 | `git status` | `.env` fora da lista de arquivos a versionar |
 
-Ainda não testados: `aumentar-nivel` com a sessão já no nível 3, os erros 404 (sessão inexistente) e 422 (código vazio), além de outras linguagens.
+Ainda não testados: a interface com a IA real do Gemini no navegador, `aumentar-nivel` com a sessão já no nível 3, os erros 404 (sessão inexistente) e 422 (código vazio) direto na API, além de outras linguagens.
 
 ## Planejamento
 

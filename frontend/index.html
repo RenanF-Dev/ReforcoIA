@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReforçoIA - Tutor de Programação</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="h-full w-full bg-slate-950 text-slate-100 font-sans antialiased overflow-hidden flex flex-col">
+
+  <!-- TOP HEADER / NAVBAR -->
+  <header class="h-14 bg-slate-900/90 border-b border-slate-800 px-4 sm:px-6 flex items-center justify-between shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="h-9 w-9 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+        <i data-lucide="brain-circuit" class="w-5 h-5 text-white"></i>
+      </div>
+      <div class="flex items-center gap-2">
+        <h1 class="text-lg font-bold bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent tracking-tight">
+          Reforço<span class="text-indigo-400">IA</span>
+        </h1>
+        <span class="hidden sm:inline text-[11px] bg-indigo-500/15 text-indigo-300 font-medium px-2 py-0.5 rounded-full border border-indigo-500/20">
+          Tutor de Programação
+        </span>
+      </div>
+    </div>
+
+    <!-- Status da API (preenchido pelo app.js) -->
+    <div id="apiStatus" class="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded-md" title="Estado da conexão com o backend">
+      <span id="apiDot" class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+      <span id="apiText">Conectando à API...</span>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-0 overflow-hidden bg-slate-950">
+
+    <!-- LEFT PANEL: CODE EDITOR & TERMINAL -->
+    <section class="md:col-span-7 lg:col-span-6 flex flex-col border-r border-slate-800/80 h-full overflow-hidden p-4 gap-3 bg-slate-950/60">
+
+      <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+        <label for="codeEditor" class="flex items-center gap-2 font-medium text-slate-300">
+          <i data-lucide="file-code" class="w-4 h-4 text-indigo-400"></i>
+          Cole o seu código:
+        </label>
+        <button id="clearCodeBtn" type="button" class="hover:text-slate-200 transition text-[11px] flex items-center gap-1">
+          <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Limpar
+        </button>
+      </div>
+
+      <div class="relative flex-1 min-h-[140px] bg-slate-900/90 border border-slate-800 rounded-xl overflow-hidden shadow-inner flex flex-col focus-within:border-indigo-500/50 transition">
+        <div class="bg-slate-900 px-4 py-1.5 border-b border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-500">
+          <span>seu_codigo</span>
+          <span class="text-slate-500">Ctrl + Enter para analisar</span>
+        </div>
+        <textarea id="codeEditor" spellcheck="false" class="w-full flex-1 bg-transparent p-4 font-mono text-xs sm:text-sm text-slate-200 resize-none focus:outline-none leading-relaxed" placeholder="Cole seu código aqui (Python, JavaScript, ...)"></textarea>
+      </div>
+
+      <div class="flex flex-col gap-1.5 shrink-0">
+        <label for="terminalInput" class="flex items-center gap-2 text-xs font-medium text-slate-300 px-1">
+          <i data-lucide="terminal" class="w-4 h-4 text-rose-400"></i>
+          Mensagem do Terminal / Erro (Opcional):
+        </label>
+        <div class="bg-black/80 border border-slate-800/90 rounded-xl p-3 font-mono text-xs text-rose-400 shadow-inner">
+          <textarea id="terminalInput" rows="2" spellcheck="false" class="w-full bg-transparent resize-none focus:outline-none text-rose-300 placeholder-slate-600" placeholder="Cole aqui a mensagem de erro, se houver"></textarea>
+        </div>
+      </div>
+
+      <button id="analyzeBtn" type="button" class="w-full bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-60 disabled:cursor-wait text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/25 active:scale-[0.99] flex items-center justify-center gap-2 text-sm">
+        <span id="analyzeIcon"><i data-lucide="sparkles" class="w-4 h-4"></i></span>
+        <svg id="spinner" class="hidden animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span id="analyzeLabel">Analisar Código</span>
+      </button>
+
+    </section>
+
+    <!-- RIGHT PANEL: INTERAÇÃO PEDAGÓGICA -->
+    <section class="md:col-span-5 lg:col-span-6 flex flex-col h-full overflow-hidden p-4 bg-slate-900/40">
+
+      <div class="flex-1 flex flex-col bg-slate-900/90 border border-slate-800/90 rounded-xl overflow-hidden shadow-2xl">
+
+        <div class="px-5 py-3.5 border-b border-slate-800 bg-slate-950/80 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></div>
+            <h2 class="text-sm font-semibold text-slate-200">Interação Pedagógica</h2>
+          </div>
+          <span class="text-[11px] font-medium bg-indigo-500/10 text-indigo-400 px-2.5 py-1 rounded-md border border-indigo-500/20 flex items-center gap-1.5">
+            <i data-lucide="bot" class="w-3.5 h-3.5"></i>
+            <span id="badgeText">Modo Socrático Ativo</span>
+          </span>
+        </div>
+
+        <!-- Conteúdo preenchido pelo app.js -->
+        <div id="feedbackContent" class="flex-1 p-5 overflow-y-auto space-y-4" aria-live="polite">
+
+          <!-- Aviso de erro (API offline, IA sobrecarregada, dados inválidos...) -->
+          <div id="errorBox" class="hidden bg-rose-500/10 border border-rose-500/30 text-rose-200 rounded-xl p-4 text-sm flex gap-3" role="alert">
+            <i data-lucide="alert-triangle" class="w-4 h-4 mt-0.5 shrink-0 text-rose-400"></i>
+            <p id="errorText" class="leading-relaxed"></p>
+          </div>
+
+          <!-- Estado inicial -->
+          <div id="emptyState" class="flex flex-col items-center justify-center text-center gap-3 text-slate-500 px-6 py-16">
+            <div class="h-12 w-12 rounded-xl bg-slate-800/80 flex items-center justify-center">
+              <i data-lucide="help-circle" class="w-6 h-6 text-indigo-400"></i>
+            </div>
+            <p class="text-sm text-slate-300 font-medium">Pronto para ajudar você a depurar.</p>
+            <p class="text-xs leading-relaxed max-w-xs">Cole o seu código e, se tiver, a mensagem de erro do terminal. Depois clique em <span class="text-slate-300">Analisar Código</span>: o tutor guia com perguntas, sem entregar a resposta.</p>
+          </div>
+
+          <!-- Pergunta Guiada (nível 1) -->
+          <div id="cardQuestion" class="hidden bg-slate-800/80 border-l-4 border-indigo-500 rounded-r-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="p-1 rounded bg-indigo-500/20 text-indigo-300"><i data-lucide="help-circle" class="w-4 h-4"></i></span>
+              <h3 class="text-xs font-bold text-indigo-300 uppercase tracking-wider">Pergunta Guiada</h3>
+            </div>
+            <p id="questionText" class="text-sm text-slate-200 leading-relaxed font-normal"></p>
+          </div>
+
+          <!-- Dica / Conceito (nível 2) -->
+          <div id="cardHint" class="hidden bg-slate-800/80 border-l-4 border-emerald-500 rounded-r-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="p-1 rounded bg-emerald-500/20 text-emerald-300"><i data-lucide="lightbulb" class="w-4 h-4"></i></span>
+              <h3 class="text-xs font-bold text-emerald-300 uppercase tracking-wider">Dica / Conceito</h3>
+            </div>
+            <p id="hintText" class="text-sm text-slate-200 leading-relaxed font-normal"></p>
+          </div>
+
+          <!-- Aprofundamento Teórico (nível 3) -->
+          <div id="cardConcept" class="hidden bg-slate-800/80 border-l-4 border-amber-500 rounded-r-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="p-1 rounded bg-amber-500/20 text-amber-300"><i data-lucide="book-open" class="w-4 h-4"></i></span>
+              <h3 class="text-xs font-bold text-amber-300 uppercase tracking-wider">Aprofundamento Teórico</h3>
+            </div>
+            <p id="conceptText" class="text-sm text-slate-200 leading-relaxed font-normal"></p>
+          </div>
+
+        </div>
+
+        <!-- Seletor de nível e controles -->
+        <div class="p-4 border-t border-slate-800 bg-slate-950/90 space-y-3 shrink-0">
+
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400">Selecione o Nível de Ajuda Guiada:</span>
+            <span id="levelIndicator" class="text-[11px] font-mono text-indigo-400">Sem análise</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <button id="lvlBtn1" type="button" data-level="1"><span>1. Perguntas</span></button>
+            <button id="lvlBtn2" type="button" data-level="2"><span>2. Dicas</span></button>
+            <button id="lvlBtn3" type="button" data-level="3"><span>3. Conceitos</span></button>
+          </div>
+
+          <button id="increaseLevelBtn" type="button" class="w-full bg-amber-500/10 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-amber-500/10 text-amber-300 border border-amber-500/30 text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition active:scale-[0.99]">
+            <i data-lucide="arrow-up-circle" class="w-4 h-4 text-amber-400"></i>
+            <span id="increaseLabel">▲ Aumentar Nível de Ajuda (Ainda com dúvidas)</span>
+          </button>
+
+          <button id="resolveBtn" type="button" class="w-full bg-emerald-500/10 hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-xs font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition active:scale-[0.99]">
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+            <span id="resolveLabel">Já resolvi o bug</span>
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
